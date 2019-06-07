@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 file_4digit = 'E:\GSTN Data\Raw\HSN_DATA_09052019\HSN_4DIGIT_DATA.csv'
 file_6digit = 'E:\GSTN Data\Raw\HSN_DATA_09052019\HSN_6DIGIT_DATA.csv'
@@ -57,7 +58,7 @@ raw_6digit = raw_6digit.drop(['index'], axis=1)
 # Calculate effective tax rate to correct some of the incorrect reporting
 raw_6digit['etr'] = (raw_6digit['cgst_cr'] + raw_6digit['sgst_cr'] + raw_6digit['igst_cr'])/raw_6digit['taxable_value']
 # Add zero in front of or at the end of hsn reported at 5 or 6 digit
-raw_6digit.hsn = np.where(raw_6digit.hsn_n>10000,
+raw_6digit.hsn = np.where(raw_6digit.hsn_n<100000,
                           np.where(raw_6digit.etr<=0.05, ("0"+ raw_6digit.hsn_n.astype(str)), (raw_6digit.hsn_n.astype(str) + "0")),
                           raw_6digit.hsn_n.astype(str))
 # Converting all HSN to 4 digit
@@ -81,8 +82,8 @@ taxable_value_2digit = raw_8digit[raw_8digit.hsn_n<100].taxable_value.sum()
 cgst_2digit = raw_8digit[raw_8digit.hsn_n<100].cgst_cr.sum()
 sgst_2digit = raw_8digit[raw_8digit.hsn_n<100].sgst_cr.sum()
 igst_2digit = raw_8digit[raw_8digit.hsn_n<100].igst_cr.sum()
-# Drop data present at 1, 2 & 3digit hsn
-raw_8digit = raw_8digit[raw_8digit.hsn_n>999]
+# Drop data present at upto 5 digit hsn
+raw_8digit = raw_8digit[raw_8digit.hsn_n>99999]
 # Drop entries with zero taxable value
 raw_8digit = raw_8digit[raw_8digit.taxable_value>0]
 raw_8digit = raw_8digit.reset_index()
@@ -90,7 +91,7 @@ raw_8digit = raw_8digit.drop(['index'], axis=1)
 # Calculate effective tax rate to correct some of the incorrect reporting
 raw_8digit['etr'] = (raw_8digit['cgst_cr'] + raw_8digit['sgst_cr'] + raw_8digit['igst_cr'])/raw_8digit['taxable_value']
 # Add zero in front of or at the end of hsn reported at 7 or 8 digit
-raw_8digit.hsn = np.where(raw_8digit.hsn_n>1000000,
+raw_8digit.hsn = np.where(raw_8digit.hsn_n<10000000,
                           np.where(raw_8digit.etr<=0.05, ("0"+ raw_8digit.hsn_n.astype(str)), (raw_8digit.hsn_n.astype(str) + "0")),
                           raw_8digit.hsn_n.astype(str))
 # Converting all HSN to 4 digit
@@ -159,4 +160,45 @@ qtr_data_final = qtr_data_4digit.append(qtr_pred_2019, ignore_index=True)
 '''
 Merge rates to the final data file
 '''
+# read the rates from file
 rates = pd.read_stata('rates.dta')
+# Merge with the data to get rates for hsn_4
+qtr_data_final = qtr_data_final.merge(right=rates, how='left', on='hsn_4')
+# Merge at 2 digit level to get rates for the rest of the cases
+rates_2 = rates[rates.hsn_4.str.len()==2]
+rates_2 = rates_2.rename({'hsn_4': 'hsn_2', 'rate': 'rate_2'}, axis=1)
+qtr_data_final['hsn_2'] = qtr_data_final.hsn_4.str.slice(0, 2)
+qtr_data_final = qtr_data_final.merge(right=rates_2, how='left', on='hsn_2')
+qtr_data_final.rate = np.where(qtr_data_final.rate.isnull(),
+                               qtr_data_final.rate_2, qtr_data_final.rate)
+# Separate data for the services sector
+qtr_data_services = qtr_data_final[qtr_data_final.hsn_2 == '99']
+qtr_data_final = qtr_data_final.drop(['hsn_2', 'rate_2'], axis=1)
+qtr_data_final = qtr_data_final.dropna(subset=['rate'])
+# Multiply rates with 2 to get the igst rate percentage
+qtr_data_final.rate = qtr_data_final.rate * 2
+qtr_data_final['tax_lia'] = qtr_data_final.cgst_cr + qtr_data_final.sgst_cr + qtr_data_final.igst_cr
+
+'''
+Compute revenue neutral rate for 12 and 18% item
+'''
+qtr_data_conv = qtr_data_final
+# qtr_data_conv = qtr_data_final[qtr_data_final.year=='2019']
+qtr_data_18_12 = qtr_data_conv[((qtr_data_conv.rate>=0.12) & (qtr_data_conv.rate<=0.18))]
+temp = qtr_data_18_12.groupby('rate')['taxable_value', 'tax_lia'].sum()
+temp_df = pd.DataFrame(data=temp)
+temp_df = temp_df.reset_index()
+temp_df['tax'] = temp_df.rate * temp_df.taxable_value
+rnr_18_12 = round((temp_df.tax.sum()/temp_df.taxable_value.sum())*100, 2)
+print('\n Convergence Rate for 12% and 18% is ' + str(rnr_18_12) + '%')
+
+'''
+Compute revenue neutral rate for 5 and 12 % item
+'''
+qtr_data_5_12 = qtr_data_conv[((qtr_data_conv.rate>=0.05) & (qtr_data_conv.rate<=0.12))]
+temp = qtr_data_5_12.groupby('rate')['taxable_value', 'tax_lia'].sum()
+temp_df = pd.DataFrame(data=temp)
+temp_df = temp_df.reset_index()
+temp_df['tax'] = temp_df.rate * temp_df.taxable_value
+rnr_5_12 = round((temp_df.tax.sum()/temp_df.taxable_value.sum())*100, 2)
+print('\n Convergence Rate for 5% and 12% is ' + str(rnr_5_12) + '%')
