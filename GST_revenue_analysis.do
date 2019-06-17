@@ -1,7 +1,7 @@
 * Reading in the rates file
 cd "E:\GSTN Data\Working"
 clear
-import delimited "E:\GSTN Data\Working\rates.csv", stringcols(2)
+import delimited "rates.csv", stringcols(2)
 gsort hsn_4 -rate
 duplicates drop hsn_4, force
 save "rates.dta", replace

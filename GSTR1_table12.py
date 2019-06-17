@@ -54,7 +54,7 @@ qtr_gstr1_2017['state_cd'] = qtr_gstr1_2017.gstin_hash.str.slice(0, 2)
 del gstr1_2017
 
 # Exporting the quarterly dataframe to a csv file
-qtr_gstr1_2017.to_csv(path+'qtr_gstr1_2017.csv')
+qtr_gstr1_2017.to_csv('qtr_gstr1_2017.csv', index=False)
 
 # Convert quarterly data to annual
 qtr_gstr1_2017['gstin_year_hsn'] = qtr_gstr1_2017.gstin_hash + '_' + qtr_gstr1_2017.year.astype(str) + '_' + qtr_gstr1_2017.hsn
@@ -67,8 +67,12 @@ yr_gstr1_2017['hsn'] = yr_gstr1_2017.gstin_year_hsn.str.slice(45,)
 yr_gstr1_2017 = yr_gstr1_2017.drop(['gstin_year_hsn'], axis=1)
 yr_gstr1_2017['state_cd'] = yr_gstr1_2017.gstin_hash.str.slice(0, 2)
 
-# Exporting the annual dataframe to a csv file
-yr_gstr1_2017.to_csv(path+'yr_gstr1_2017.csv')
+# Delete qtr_gstr1_2017 to free up memory
+del qtr_gstr1_2017
+
+# Export gstr1_table12 for FY 2017-18
+yr_gstr1_2017.to_csv('yr_gstr1_2017.csv', index=False)
+
 '''
 Read data from each of the monthly files for FY 2018-19
 '''
@@ -112,6 +116,9 @@ qtr_gstr1_2018['state_cd'] = qtr_gstr1_2018.gstin_hash.str.slice(0, 2)
 # Delete gstr1_2018 to free up memory
 del gstr1_2018
 
+# Exporting the quarterly dataframe to a csv file
+qtr_gstr1_2018.to_csv('qtr_gstr1_2018.csv', index=False)
+
 # Convert quarterly data to annual
 qtr_gstr1_2018['gstin_year_hsn'] = qtr_gstr1_2018.gstin_hash + '_' + qtr_gstr1_2018.year.astype(str) + '_' + qtr_gstr1_2018.hsn
 grouped = qtr_gstr1_2018.groupby('gstin_year_hsn')['taxable_value', 'cgst', 'sgst', 'igst', 'tax_liab', 'cess'].sum()
@@ -122,6 +129,24 @@ yr_gstr1_2018['year'] = yr_gstr1_2018.gstin_year_hsn.str.slice(40, 44)
 yr_gstr1_2018['hsn'] = yr_gstr1_2018.gstin_year_hsn.str.slice(45,)
 yr_gstr1_2018 = yr_gstr1_2018.drop(['gstin_year_hsn'], axis=1)
 yr_gstr1_2018['state_cd'] = yr_gstr1_2018.gstin_hash.str.slice(0, 2)
+yr_gstr1_2018['hsn_len'] = yr_gstr1_2018.hsn.str.len()
+yr_gstr1_2018['chapter'] = yr_gstr1_2018.hsn.str.slice(0, 2)
+yr_gstr1_2018['chapter'] = np.where(yr_gstr1_2018.hsn_len==1, '0' + yr_gstr1_2018.hsn.str.slice(0, 1), yr_gstr1_2018.chapter)
+yr_gstr1_2018['chapter'] = np.where(yr_gstr1_2018.hsn_len==3, '0' + yr_gstr1_2018.hsn.str.slice(0, 1), yr_gstr1_2018.chapter)
+yr_gstr1_2018['chapter'] = np.where(yr_gstr1_2018.hsn_len==5, '0' + yr_gstr1_2018.hsn.str.slice(0, 1), yr_gstr1_2018.chapter)
+yr_gstr1_2018['chapter'] = np.where(yr_gstr1_2018.hsn_len==7, '0' + yr_gstr1_2018.hsn.str.slice(0, 1), yr_gstr1_2018.chapter)
+yr_gstr1_2018_services = yr_gstr1_2018[yr_gstr1_2018.chapter == '99']
+yr_gstr1_2018_err = yr_gstr1_2018[(yr_gstr1_2018.chapter == 'No') | (yr_gstr1_2018.chapter == '00')]
+yr_gstr1_2018_goods = yr_gstr1_2018[(yr_gstr1_2018.chapter != 'No') & (yr_gstr1_2018.chapter != '00') & (yr_gstr1_2018.chapter != '99')]
+
+# Delete qtr_gstr1_2018 to free up memory
+del qtr_gstr1_2018
+
+# Export gstr1_table12 for FY 2018-19
+yr_gstr1_2018.to_csv('yr_gstr1_2018.csv', index=False)
+yr_gstr1_2018_services.to_csv('yr_gstr1_2018_services.csv', index=False)
+yr_gstr1_2018_err.to_csv('yr_gstr1_2018_err.csv', index=False)
+yr_gstr1_2018_goods.to_csv('yr_gstr1_2018_goods.csv', index=False)
 
 '''
 Consolidate 2017 and 2018 data
@@ -136,4 +161,4 @@ yr_gstr1_2018['hsn'] = yr_gstr1_2018.gstin_hash.str.slice(40,)
 yr_gstr1_all['state_cd'] = yr_gstr1_all.gstin_hash.str.slice(0, 2)
 
 # Export consolidated gstr1_table12
-yr_gstr1_all.to_csv('gstr1_table12.csv')
+yr_gstr1_all.to_csv('gstr1_table12.csv', index=False)

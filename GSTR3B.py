@@ -20,6 +20,7 @@ Read data from each of the monthly files for FY 2017-18
 first_flag = 0
 for file in files_gstr3b_2017:
     file_name = path + file
+    # as the data is written as both string and integer converting everything to string first.
     df_temp = pd.read_csv(file_name, dtype={'state_cd': object, 'rtn_prd': object, 'ITC_SGST': object, 'ITC_CESS': object, 'CASH_IGST': object,
                                             'CASH_CGST': object, 'CASH_SGST': object, 'CASH_CESS': object})
     # Remove the preceeding and succeding whitespaces
@@ -64,19 +65,20 @@ for file in files_gstr3b_2017:
     
     # Append the monthly data into a single dataframe
     if first_flag==0:
-        gstr3b_2017 = df_temp
+        gstr3b_2017_raw = df_temp
     else:
-        gstr3b_2017 = gstr3b_2017.append(df_temp, ignore_index=True)
+        gstr3b_2017_raw = gstr3b_2017_raw.append(df_temp, ignore_index=True)
     first_flag += 1
 
 # Identifiying the erroneous entries
-gstr3b_2017['etr'] = gstr3b_2017.tax_liab/gstr3b_2017.taxable_supply
-gstr3b_2017 = gstr3b_2017[gstr3b_2017.etr<3]
+gstr3b_2017_raw['etr'] = gstr3b_2017_raw.tax_liab/gstr3b_2017_raw.taxable_supply
+gstr3b_2017 = gstr3b_2017_raw[gstr3b_2017_raw.etr<0.3]
 
 # Convert monthly data to quarterly
 gstr3b_2017['gstin_period_q'] = gstr3b_2017.year.astype(str) + '_' + gstr3b_2017.qtr.astype(str) + '_' + gstr3b_2017.ann_gstin_id
 grouped = gstr3b_2017.groupby('gstin_period_q')['3_1_A_taxable', '3_1_A_IGST', '3_1_A_CGST', '3_1_A_SGST', '3_1_A_CESS','3_1_B_TAXABLE',
-                                                '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
+                                                '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_D_TAXABLE', '3_1_D_IGST', '3_1_D_CGST',
+                                                '3_1_D_SGST', '3_1_D_CESS', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
                                                 'LIAB_SGST', 'LIAB_CESS', 'ITC_IGST', 'ITC_CGST', 'ITC_SGST', 'ITC_CESS', 'CASH_IGST',
                                                 'CASH_CGST', 'CASH_SGST', 'CASH_CESS', 'taxable_supply', 'tax_liab', 'tax_cash', 'tax_itc'].sum()
 qtr_gstr3b_2017 = pd.DataFrame(data=grouped)
@@ -88,12 +90,17 @@ qtr_gstr3b_2017 = qtr_gstr3b_2017.drop(['gstin_period_q'], axis=1)
 qtr_gstr3b_2017['state_cd'] = qtr_gstr3b_2017.gstin_hash.str.slice(0, 2)
 
 # Delete gstr3b_2017 to free up memory
+del gstr3b_2017_raw
 del gstr3b_2017
+
+# Exporting the quarterly dataframe to a csv file
+qtr_gstr3b_2017.to_csv('qtr_gstr3b_2017.csv', index=False)
 
 # Convert quarterly data to annual
 qtr_gstr3b_2017['gstin_period'] = qtr_gstr3b_2017.year.astype(str) + '_' + qtr_gstr3b_2017.gstin_hash
 grouped = qtr_gstr3b_2017.groupby('gstin_period')['3_1_A_taxable', '3_1_A_IGST', '3_1_A_CGST', '3_1_A_SGST', '3_1_A_CESS','3_1_B_TAXABLE',
-                                                  '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
+                                                  '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_D_TAXABLE', '3_1_D_IGST', '3_1_D_CGST',
+                                                  '3_1_D_SGST', '3_1_D_CESS', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
                                                   'LIAB_SGST', 'LIAB_CESS', 'ITC_IGST', 'ITC_CGST', 'ITC_SGST', 'ITC_CESS', 'CASH_IGST',
                                                   'CASH_CGST', 'CASH_SGST', 'CASH_CESS', 'taxable_supply', 'tax_liab', 'tax_cash', 'tax_itc'].sum()
 yr_gstr3b_2017 = pd.DataFrame(data=grouped)
@@ -102,6 +109,9 @@ yr_gstr3b_2017['year'] = yr_gstr3b_2017.gstin_period.str.slice(0, 4)
 yr_gstr3b_2017['gstin_hash'] = yr_gstr3b_2017.gstin_period.str.slice(5,)
 yr_gstr3b_2017 = yr_gstr3b_2017.drop(['gstin_period'], axis=1)
 yr_gstr3b_2017['state_cd'] = yr_gstr3b_2017.gstin_hash.str.slice(0, 2)
+
+# Export yr_gstr3b_2017 for FY 2017-18
+yr_gstr3b_2017.to_csv('yr_gstr3b_2017.csv', index=False)
 
 '''
 Read data from each of the monthly files for FY 2018-19
@@ -153,19 +163,20 @@ for file in files_gstr3b_2018:
     
     # Append the monthly data into a single dataframe
     if first_flag==0:
-        gstr3b_2018 = df_temp
+        gstr3b_2018_raw = df_temp
     else:
-        gstr3b_2018 = gstr3b_2018.append(df_temp, ignore_index=True)
+        gstr3b_2018_raw = gstr3b_2018_raw.append(df_temp, ignore_index=True)
     first_flag += 1
 
 # Identifiying the erroneous entries
-gstr3b_2018['etr'] = gstr3b_2018.tax_liab/gstr3b_2018.taxable_supply
-gstr3b_2018 = gstr3b_2018[gstr3b_2018.etr<3]
+gstr3b_2018_raw['etr'] = gstr3b_2018_raw.tax_liab/gstr3b_2018_raw.taxable_supply
+gstr3b_2018 = gstr3b_2018_raw[gstr3b_2018_raw.etr<0.3]
 
 # Convert monthly data to quarterly
 gstr3b_2018['gstin_period_q'] = gstr3b_2018.year.astype(str) + '_' + gstr3b_2018.qtr.astype(str) + '_' + gstr3b_2018.ann_gstin_id
 grouped = gstr3b_2018.groupby('gstin_period_q')['3_1_A_taxable', '3_1_A_IGST', '3_1_A_CGST', '3_1_A_SGST', '3_1_A_CESS','3_1_B_TAXABLE',
-                                                '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
+                                                '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_D_TAXABLE', '3_1_D_IGST', '3_1_D_CGST',
+                                                '3_1_D_SGST', '3_1_D_CESS', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
                                                 'LIAB_SGST', 'LIAB_CESS', 'ITC_IGST', 'ITC_CGST', 'ITC_SGST', 'ITC_CESS', 'CASH_IGST',
                                                 'CASH_CGST', 'CASH_SGST', 'CASH_CESS', 'taxable_supply', 'tax_liab', 'tax_cash', 'tax_itc'].sum()
 qtr_gstr3b_2018 = pd.DataFrame(data=grouped)
@@ -177,12 +188,17 @@ qtr_gstr3b_2018 = qtr_gstr3b_2018.drop(['gstin_period_q'], axis=1)
 qtr_gstr3b_2018['state_cd'] = qtr_gstr3b_2018.gstin_hash.str.slice(0, 2)
 
 # Delete gstr3b_2018 to free up memory
+del gstr3b_2018_raw
 del gstr3b_2018
+
+# Exporting the quarterly dataframe to a csv file
+qtr_gstr3b_2018.to_csv('qtr_gstr3b_2018.csv', index=False)
 
 # Convert quarterly data to annual
 qtr_gstr3b_2018['gstin_period'] = qtr_gstr3b_2018.year.astype(str) + '_' + qtr_gstr3b_2018.gstin_hash
 grouped = qtr_gstr3b_2018.groupby('gstin_period')['3_1_A_taxable', '3_1_A_IGST', '3_1_A_CGST', '3_1_A_SGST', '3_1_A_CESS','3_1_B_TAXABLE',
-                                                  '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
+                                                  '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_D_TAXABLE', '3_1_D_IGST', '3_1_D_CGST',
+                                                  '3_1_D_SGST', '3_1_D_CESS', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
                                                   'LIAB_SGST', 'LIAB_CESS', 'ITC_IGST', 'ITC_CGST', 'ITC_SGST', 'ITC_CESS', 'CASH_IGST',
                                                   'CASH_CGST', 'CASH_SGST', 'CASH_CESS', 'taxable_supply', 'tax_liab', 'tax_cash', 'tax_itc'].sum()
 yr_gstr3b_2018 = pd.DataFrame(data=grouped)
@@ -192,18 +208,24 @@ yr_gstr3b_2018['gstin_hash'] = yr_gstr3b_2018.gstin_period.str.slice(5,)
 yr_gstr3b_2018 = yr_gstr3b_2018.drop(['gstin_period'], axis=1)
 yr_gstr3b_2018['state_cd'] = yr_gstr3b_2018.gstin_hash.str.slice(0, 2)
 
+# Export yr_gstr3b_2018 for FY 2018-19
+yr_gstr3b_2018.to_csv('yr_gstr3b_2018.csv', index=False)
 
 '''
 Consolidate 2017 and 2018 data
 '''
 temp_df = yr_gstr3b_2017.append(yr_gstr3b_2018, ignore_index=True)
 grouped = temp_df.groupby('gstin_hash')['3_1_A_taxable', '3_1_A_IGST', '3_1_A_CGST', '3_1_A_SGST', '3_1_A_CESS','3_1_B_TAXABLE',
-                                        '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
+                                        '3_1_B_IGST', '3_1_B_CESS', '3_1_C_TAXABLE', '3_1_D_TAXABLE', '3_1_D_IGST', '3_1_D_CGST',
+                                        '3_1_D_SGST', '3_1_D_CESS', '3_1_E_TAXABLE', 'LIAB_IGST', 'LIAB_CGST',
                                         'LIAB_SGST', 'LIAB_CESS', 'ITC_IGST', 'ITC_CGST', 'ITC_SGST', 'ITC_CESS', 'CASH_IGST',
                                         'CASH_CGST', 'CASH_SGST', 'CASH_CESS', 'taxable_supply', 'tax_liab', 'tax_cash', 'tax_itc'].sum()
 yr_gstr3b_all = pd.DataFrame(data=grouped)
 yr_gstr3b_all = yr_gstr3b_all.reset_index()
 yr_gstr3b_all['state_cd'] = yr_gstr3b_all.gstin_hash.str.slice(0, 2)
+
+# Export consolidated gstr3b data
+yr_gstr3b_all.to_csv('yr_gstr3b_all.csv', index=False)
 
 '''
 Compute the cash to liability ratio
@@ -211,17 +233,17 @@ Compute the cash to liability ratio
 # Based on all data
 yr_gstr3b_all['cash_ratio'] = yr_gstr3b_all.tax_cash/yr_gstr3b_all.tax_liab
 yr_gstr3b_all['cash_ratio_cess'] = yr_gstr3b_all.CASH_CESS/yr_gstr3b_all.LIAB_CESS
-ratio_all = yr_gstr3b_all['gstin_hash', 'cash_ratio', 'cash_ratio_cess']
+ratio_all = yr_gstr3b_all[['gstin_hash', 'cash_ratio', 'cash_ratio_cess']]
 
 # Based on 2018 data
 yr_gstr3b_2017['cash_ratio'] = yr_gstr3b_2017.tax_cash/yr_gstr3b_2018.tax_liab
 yr_gstr3b_2017['cash_ratio_cess'] = yr_gstr3b_2017.CASH_CESS/yr_gstr3b_2018.LIAB_CESS
-ratio_2017 = yr_gstr3b_2017['gstin_hash', 'cash_ratio', 'cash_ratio_cess']
+ratio_2017 = yr_gstr3b_2017[['gstin_hash', 'cash_ratio', 'cash_ratio_cess']]
 
 # Based on 2018 data
 yr_gstr3b_2018['cash_ratio'] = yr_gstr3b_2018.tax_cash/yr_gstr3b_2018.tax_liab
 yr_gstr3b_2018['cash_ratio_cess'] = yr_gstr3b_2018.CASH_CESS/yr_gstr3b_2018.LIAB_CESS
-ratio_2018 = yr_gstr3b_2018['gstin_hash', 'cash_ratio', 'cash_ratio_cess']
+ratio_2018 = yr_gstr3b_2018[['gstin_hash', 'cash_ratio', 'cash_ratio_cess']]
 
 # Export ratio file
-ratio_2018.to_csv('ratio_2018.csv')
+ratio_2018.to_csv('ratio_2018.csv', index=False)
