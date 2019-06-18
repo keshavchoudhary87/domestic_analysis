@@ -173,6 +173,7 @@ qtr_data_final.rate = np.where(qtr_data_final.rate.isnull(),
                                qtr_data_final.rate_2, qtr_data_final.rate)
 # Separate data for the services sector
 qtr_data_services = qtr_data_final[qtr_data_final.hsn_2 == '99']
+qtr_data_services.to_csv('qtr_data_services.csv')
 qtr_data_final = qtr_data_final.drop(['hsn_2', 'rate_2'], axis=1)
 qtr_data_final = qtr_data_final.dropna(subset=['rate'])
 # Multiply rates with 2 to get the igst rate percentage
