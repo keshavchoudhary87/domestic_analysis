@@ -15,7 +15,7 @@ data_2018 = data_2018.fillna(0)
 # Calculating HSN wise cash ratio as well as cash ratio cess
 data_2018['liab_x_cash_ratio'] = data_2018['tax_liab'] * data_2018['cash_ratio']
 data_2018['liab_x_cess_ratio'] = data_2018['cess'] * data_2018['cash_ratio_cess']
-grouped = data_2018.groupby('hsn')['tax_liab', 'cess', 'liab_x_cash_ratio', 'liab_x_cess_ratio'].sum()
+grouped = data_2018.groupby('hsn')['taxable_value', 'tax_liab', 'cess', 'liab_x_cash_ratio', 'liab_x_cess_ratio'].sum()
 hsn_ratio = pd.DataFrame(data=grouped)
 hsn_ratio = hsn_ratio.reset_index()
 hsn_ratio['cash_ratio'] = hsn_ratio['liab_x_cash_ratio']/hsn_ratio['tax_liab']
@@ -23,7 +23,7 @@ hsn_ratio['cash_ratio_cess'] = hsn_ratio['liab_x_cess_ratio']/hsn_ratio['tax_lia
 hsn_ratio = hsn_ratio.drop(['liab_x_cash_ratio', 'liab_x_cess_ratio'], axis=1)
 # Export  ratio to excel file
 writer = pd.ExcelWriter('hsn_wise_ratio.xlsx')
-hsn_ratio.to_excel(writer,'Sheet1', index=False)
+hsn_ratio.to_excel(writer,'17.06.2019', index=False)
 writer.save()
 
 # Find out GSTINs having single HSNs
