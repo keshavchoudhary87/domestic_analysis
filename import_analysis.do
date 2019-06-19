@@ -158,6 +158,8 @@ replace chapter = "Vehicles and Parts" if hsn_2==87
 replace chapter = "Services" if hsn_2 == 99
 labmask hsn_2, values(chapter)
 
+
+* Month on Month Graphs on Loop
 foreach x in 87 72 85 84 39 25 30 27 73 29 38 40 33 24 {
 local f0: label hsn_2 `x'
 local g_bcd = r(mean)*100
