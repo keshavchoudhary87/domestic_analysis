@@ -138,28 +138,47 @@ replace growth_liab = growth_liab*100
 format growth_liab %4.2f
 replace growth_value = growth_value*100
 format growth_value %4.2f
+
+* Description of HSNs
+gen chapter = ""
+replace chapter = "Tobacco" if hsn_2==24
+replace chapter = "Cement" if hsn_2==25
+replace chapter = "Petroleum Products" if hsn_2==27
+replace chapter = "Organic Chemicals" if hsn_2==29
+replace chapter = "Pharmaceuticals" if hsn_2==30
+replace chapter = "Essential Oils" if hsn_2==33
+replace chapter = "Miscellaneous Chemicals" if hsn_2==38
+replace chapter = "Plastics" if hsn_2==39
+replace chapter = "Rubber" if hsn_2==40
+replace chapter = "Iron and Steel" if hsn_2==72
+replace chapter = "Articles of Iron and Steel" if hsn_2==73
+replace chapter = "Machinery" if hsn_2==84
+replace chapter = "Electronics" if hsn_2==85
+replace chapter = "Vehicles and Parts" if hsn_2==87
+replace chapter = "Services" if hsn_2 == 99
+labmask hsn_2, values(chapter)
+
 foreach x in 87 72 85 84 39 25 30 27 73 29 38 40 33 24 {
-su growth_bcd if hsn_2==`x'
+local f0: label hsn_2 `x'
 local g_bcd = r(mean)*100
 su growth_igst if hsn_2==`x'
 local g_igst = r(mean)*100  
 twoway scatter growth_liab month if hsn_2==`x', mcolor(green) mlabel(growth_liab) mlabsize(vsmall)|| line growth_liab month if hsn_2==`x' , lc(green) || ///
  scatter growth_value month if hsn_2==`x' , mcolor(blue) mlabel(growth_value) mlabsize(vsmall)|| line growth_value month if hsn_2==`x' ,lc(blue) ///
  xlabel(1/9, valuelabel angle(45) labsize(vsmall)) ylabel(,labsize(vsmall)) xtitle("Time Period") ///
- yline(0) ytitle("Growth Rate in Percent") title("Month-on-Month Growth Rate for HSN = `x'") ///
+ yline(0) ytitle("Growth Rate in Percent") title("Month-on-Month Growth Rate for HSN = `x'") subtitle("`f0'") ///
  legend(order (1 "Growth in Liability" 3 "Growth in Taxable Value"))
 graph export "hsn`x'.png", replace
 }
 * Separately for Ch 99 because there are no imports
 local x=99
+local f0: label hsn_2 99
 twoway scatter growth_liab month if hsn_2==`x' , mcolor(green) mlabel(growth_liab) mlabsize(vsmall)|| line growth_liab month if hsn_2==`x' , lc(green)|| ///
  scatter growth_value month if hsn_2==`x', mcolor(blue) mlabel(growth_value) mlabsize(vsmall)|| line growth_value month if hsn_2==`x', lc(blue) ///
- xlabel(1/9, valuelabel angle(45) labsize(vsmall)) ylabel(, labsize(vsmall)) yline(0) xtitle("Time Period")///
- ytitle("Growth Rate in Percent") title("Month-on-Month Growth Rate for HSN = `x'") ///
+ xlabel(1/9, valuelabel angle(45) labsize(vsmall)) ylabel(, labsize(vsmall)) yline(0) xtitle("Time Period") ///
+ ytitle("Growth Rate in Percent") title("Month-on-Month Growth Rate for HSN = `x'") subtitle("`f0'") ///
  legend(order(2 "Growth in Liability" 4 "Growth in Taxable Value"))
 graph export "hsn`x'.png", replace
-
-
 
 
 
