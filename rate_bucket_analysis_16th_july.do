@@ -236,13 +236,13 @@ gen percent_liab_event = 100*(liab_cr/liab_event)
 cd ..
 cd "output_files"
 * Collections 
-graph bar (asis) percent_collections_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Composition of Collections from Goods in Rate Buckets", size(medium))
+graph bar (asis) percent_collections_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Event-Wise Composition of Goods in Rate Buckets", size(medium)) subtitle("Collections")
 graph export "rate_bucket_collections.png", width(10000) replace 
 * Taxable Value
-graph bar (asis) percent_value_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Composition of Taxable Value of Goods in Rate Buckets", size(medium))
+graph bar (asis) percent_value_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Event-Wise Composition of Goods in Rate Buckets", size(medium)) subtitle("Taxable Value")
 graph export "rate_bucket_value.png", width(10000) replace 
 * Liability
-graph bar (asis) percent_liab_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Composition of Tax Liability of Goods in Rate Buckets", size(medium))
+graph bar (asis) percent_liab_event,  over(event, lab(angle(vertical) labsize(tiny))) over(rate)  blabel(bar, format(%10.1fc) size(tiny)) ytitle("Share in percent") title("Event-Wise Composition of Goods in Rate Buckets", size(medium)) subtitle("Tax Liability")
 graph export "rate_bucket_liability.png", width(10000) replace 
 
 
